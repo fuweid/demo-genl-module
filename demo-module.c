@@ -3,7 +3,7 @@
 #include <linux/kernel.h>
 
 #define DEMOGENL_VERSION 1
-#define DEMOGENL_NAME "CTRL_GEMOGENL"
+#define DEMOGENL_NAME "CTRL_DEMOGENL"
 
 // Define attributes
 //
