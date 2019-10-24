@@ -1,7 +1,9 @@
 #include <net/genetlink.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
+#include<linux/pid.h>
 
+// NOTE: All the code is test on kernel tagged by v4.4.
 #define DEMOGENL_VERSION 1
 #define DEMOGENL_NAME "CTRL_DEMOGENL"
 
@@ -87,6 +89,29 @@ int demogenl_cmd_echo(struct sk_buff *skb_2, struct genl_info *info) {
     int rc = 0;
     struct sk_buff *skb;
     void *msg_head;
+    pid_t pid;
+
+    // NOTE: generic netlink controller is registered as one kind of netlink.
+    // All the messages send to generic netlink controller will be received
+    // by genl_rcv which defined in netlink_kernel_cfg.input for generic
+    // netlink. The genl_rcv will unpack the messages and choose command to
+    // handle the coming message.
+    //
+    // The call path is like:
+    //
+    // genl_rcv -> genl_rcv_msg -> genl_family_rcv_msg -> genl_ops.doit
+    //
+    // In this case, the doit is demogenl_cmd_echo. Only the demogenl_cmd_echo
+    // return, the userspace application sendTo syscall will return. It is
+    // blocked. Basically, use msleep(xx) to test sendTo timeout won't work
+    // because the sendTo already enters syscall.
+    //
+    // The following statement for getting pid is to indicate that the kernel
+    // is using context of userspace application to handle the syscall, which
+    // means it is blocked. If want it unblock, spawn kernel thread to handle
+    // the data.
+    pid = __task_pid_nr_ns(current, PIDTYPE_PID, NULL);
+    printk("userspace pid is %d\n", pid);
 
     if (info == NULL) {
         printk("unexpected nil value of genl_info\n");
